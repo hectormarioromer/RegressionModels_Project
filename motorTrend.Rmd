@@ -1,0 +1,101 @@
+---
+title: 'Regression Models Course Project: Motor Trend'
+author: "Hector Mario Romer"
+date: '2022-02-27'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Executive summary
+
+For the purpose of this project, we work for Motor Trend, a magazine about the automobile industry. Looking at a data set of a collection of cars, they are interested in exploring the relationship between a set of variables and miles per gallon (MPG) (outcome). They are particularly interested in the following two questions:
+
+“Is an automatic or manual transmission better for MPG”
+
+"Quantify the MPG difference between automatic and manual transmissions"  
+
+We will try to answer these questions using lineal regression, including the categorical variables transmission and cylinders. 
+
+## Exploratory data analysis (EDA)
+
+```{r, include=FALSE}
+library(dplyr)
+library(ggplot2)
+
+data("mtcars")
+```
+
+To have an idea of the linear relationships of the variables, we first print a correlation table:
+
+```{r correlation}
+cor(mtcars)[,c(1,9)]
+```
+
+The correlation between *mpg* and *am* (transmission) is **0.60**. There is a high negative correlation between *mpg* and *cyl* (-0.85), *disp* (-0.85) and *wt* (-0.87), which represent number of cylinders, displacement (cubic inches) and weight in tons respectively. For *am* there is a high correlation with *drat* (0.71) and *gear* (0.80), representing rear axle ratio and number of forward gears.
+
+```{r}
+am_mean <- mtcars %>% group_by(am) %>% summarise(mpg = mean(mpg))
+am_mean
+```
+
+The mean MPG for automatic cars is `r round(am_mean[1,2], 2)` while for manual cars is `r round(am_mean[2,2], 2)`. This is a  *`r round(am_mean[2,2] - am_mean[1,2], 2)`* MPG difference, favoring manual cars.
+
+## Regression models and coefficients interpretation
+
+Let's try different models using the variables discussed before. Then, we will do an analysis of variance table, to measure statistical significance. 
+
+```{r, echo=TRUE}
+fit1 <- lm(mpg ~ factor(am), mtcars)
+fit2 <- lm(mpg ~ factor(am) + factor(cyl), mtcars)
+fit3 <- lm(mpg ~ factor(am) + factor(cyl) + disp, mtcars)
+fit4 <- lm(mpg ~ factor(am) + factor(cyl) + disp + wt, mtcars)
+
+anova(fit1, fit2, fit3, fit4)
+
+```
+
+We can see that the addition of the *cyl* variable is necessary because of its large statistical significance. Therefore, we will use fit 2. Let's look at the coefficients:
+
+```{r}
+summary(fit2)$coefficients
+```
+The intercept represents the conditional mean for cars with automatic transmission and 4 cylinders, where we expect to have 24.80 MPG. The most significant difference occurs when cars have 8 cylinders with a 10.1 MPG decrease. Cars with 6 cylinders will have a decrease of 6.16 MPG. 
+
+To answer the questions, we can conclude that having a car with manual transmission will give on average an increase of *2.56 MPG* over cars with automatic transmission, given all other variables equal. This makes manual transmission cars better in terms of MPG.
+
+## Residuals
+
+In general, the fit of the linear regression model and its residuals seem to comply with the prerequisites of a linear model, explaining adequately the variance in MPG (fuel consumption). The points of the Normal Q-Q plot (check Appendix - Residual plots) follow closely the line, indicating that the residuals are normally distributed. 
+
+## Conclusion
+
+Cars with manual transmissions have better milleage (MPG) than cars with automatic transmissions. On average, 7.24 MPG difference. However, analisys showed that transmission variable alone was not as statistical significant as variables such as cylinders, displacement and weight. 
+
+We chose a linear model that included cylinders, the most statistical signifcant variable, and determined that manual cars on average have an increase of *2.56 MPG* over cars with automatic transmission.
+
+
+## Appendix
+
+### Figure 1
+
+```{r, fig.width=7}
+
+am_boxplot <- ggplot(mtcars, aes(x = factor(am), y = mpg)) +
+        theme_bw() +
+        geom_boxplot(fill = "lightblue") +
+        geom_point(data = am_mean, color = "navyblue", size = 3) +
+        labs(title = "MPG per transmission type") +
+        scale_x_discrete(labels=c("0" = "Automatic", "1" = "Manual"))
+am_boxplot
+```
+
+### Residual plots
+
+```{r, fig.width=7, fig.height=7}
+par(mfrow = c(2,2))
+plot(fit2)
+```
+
