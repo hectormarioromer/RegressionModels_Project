@@ -2,7 +2,7 @@
 title: 'Regression Models Course Project: Motor Trend'
 author: "Hector Mario Romer"
 date: '2022-02-27'
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
